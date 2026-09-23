@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "vibe-motifmatch",
+  "name": "Vibe MotifMatch",
+  "description": "MotifMatch ONNX model from vibe-motif-apps.",
+  "assemblyId": "hg38",
+  "sequenceProvider": {
+    "type": "ucsc",
+    "genome": "hg38"
+  },
+  "model": {
+    "format": "onnx",
+    "url": "/computational/models/vibe-motifmatch.onnx",
+    "inputName": "input"
+  },
+  "inference": {
+    "flankBp": 0,
+    "maxWindowBp": 300000,
+    "maxResolutionBp": 24
+  },
+  "subtracks": [
+    {
+      "id": "human-celltype-1",
+      "name": "MotifMatch human[0]",
+      "kind": "signal",
+      "color": "#77b6ff",
+      "height": 76,
+      "outputName": "output_human",
+      "channelIndex": 0,
+      "transform": "relu"
+    },
+    {
+      "id": "human-celltype-2",
+      "name": "MotifMatch human[1]",
+      "kind": "signal",
+      "color": "#79d79e",
+      "height": 76,
+      "outputName": "output_human",
+      "channelIndex": 1,
+      "transform": "relu"
+    },
+    {
+      "id": "mouse-celltype-1",
+      "name": "MotifMatch mouse[0]",
+      "kind": "signal",
+      "color": "#f59abb",
+      "height": 76,
+      "outputName": "output_mouse",
+      "channelIndex": 0,
+      "transform": "relu"
+    }
+  ]
+}

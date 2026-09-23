@@ -1,0 +1,39 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local-only sample data. Nothing in src/ reads public/data/ucsc -- the demo
+# tracks are read from UCSC over range requests -- but a local copy is easy to
+# drop in, and 80 MB of it does not belong in the repository.
+public/data/ucsc/
+
+# Test artifacts
+test-results
+
+# Local checkpoint backups from model export work; never part of the repo.
+.model-backups/
+
+# Python bytecode from the export/fixture scripts
+__pycache__/
+*.pyc

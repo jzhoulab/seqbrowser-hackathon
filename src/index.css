@@ -1,0 +1,30 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  /*
+   * A two-finger horizontal swipe is how you pan the genome. Without this, macOS
+   * browsers claim that gesture for history back/forward and the view jumps to the
+   * previous page mid-pan.
+   *
+   * `.browser-scene` already sets overscroll-behavior, but that only stops scroll
+   * chaining OUT of that element. The history gesture is decided at the viewport,
+   * which takes its overscroll-behavior from html/body -- so the guard has to live
+   * here as well, and it also covers swipes that start over the header or a panel,
+   * outside the wheel handler's element.
+   */
+  overscroll-behavior: none;
+}
+
+body {
+  overflow: hidden;
+  background: #f6f4ef;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}

@@ -1,0 +1,380 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://seq.zhoulab.io/computational/czpack.schema.json",
+  "title": "Sequence Browser computational pack (.czpack)",
+  "description": "Manifest that brings a small ONNX sequence model into Sequence Browser as one or more inference tracks.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "sequenceProvider",
+    "model",
+    "subtracks"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema for editor validation."
+    },
+    "schemaVersion": {
+      "const": 1,
+      "description": "Manifest format version. Only 1 is supported."
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable machine id for the pack, e.g. \"seqbro2-puffin\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable pack name shown in the UI."
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional one-line description."
+    },
+    "assemblyId": {
+      "type": "string",
+      "description": "Assembly this model was trained for, e.g. \"hg38\". Used to prompt an assembly switch on import."
+    },
+    "sequenceProvider": {
+      "type": "object",
+      "required": [
+        "type",
+        "genome"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "ucsc",
+          "description": "Only the UCSC sequence API is supported today."
+        },
+        "genome": {
+          "type": "string",
+          "minLength": 1,
+          "description": "UCSC genome name passed to the sequence API, e.g. \"hg38\"."
+        }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": [
+        "format",
+        "url"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "const": "onnx",
+          "description": "Only ONNX models are supported."
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "description": "URL or path to the .onnx file, resolved relative to the pack URL."
+        },
+        "inputName": {
+          "type": "string",
+          "description": "Name of the sequence input. Defaults to the model's first input. The sequence is fed as a float32 tensor of shape [1, 4, L] (one-hot, channel order A,C,G,T; unknown bases are all-zero)."
+        },
+        "fixedInputs": {
+          "type": "object",
+          "description": "Constant scalar inputs fed on every run as float32 tensors of shape [1] (e.g. a threshold).",
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional runtime hints. Sensible defaults apply when omitted.",
+      "properties": {
+        "flankBp": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Context bases the model consumes on EACH side without emitting output for them. Load-bearing: a wrong value shifts every coordinate. For a valid-convolution model, output length == input length - 2*flankBp."
+        },
+        "maxWindowBp": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Upper bound on the visible span the model may compute (declared ceiling). The browser further caps this to whatever fits its ~1s latency budget at the model's measured cost."
+        },
+        "maxResolutionBp": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Only compute when the view is at least this fine (bp per output bin). Prevents whole-chromosome inference."
+        },
+        "transcriptPadding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bp"],
+          "description": "For a transcript model trained on transcripts flanked by N: the browser feeds N for bases within `bp` of a same-strand canonical transcript's ends (outside it), matching how training windows looked. Needs a canonical transcript annotation for the assembly (MANE Select on hg38).",
+          "properties": {
+            "bp": { "type": "integer", "minimum": 1, "description": "N bases on each end of a transcript in training." }
+          }
+        }
+      }
+    },
+    "plotGroups": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Optional multi-series display composition. Output groups remain independently selectable and are only coalesced at render time.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "subtrackIds"
+            ]
+          },
+          {
+            "required": [
+              "groupIds"
+            ]
+          }
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subtrackIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Specific outputs included in display order."
+          },
+          "groupIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Whole output collections appended in display order."
+          },
+          "dashedSubtrackIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "dashedGroupIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 42
+          },
+          "comparesEdits": {
+            "type": "boolean",
+            "description": "The plot an edited sequence is compared against: re-run on the modified sequence and shown beneath the modified row. One group per pack; with none declared, the first plot group is used."
+          }
+        }
+      }
+    },
+    "subtracks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One rendered track per entry. Distinct subtracks may read different outputs or different channels of one output.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "color",
+          "height",
+          "outputName"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique within the pack."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "signal",
+              "annotation"
+            ],
+            "description": "\"signal\" draws a filled waveform; \"annotation\" draws interval/density features."
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$",
+            "description": "Hex color, e.g. \"#77b6ff\"."
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 42,
+            "description": "Row height in px (clamped to >= 42)."
+          },
+          "outputName": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Model output to read. Its last dimension is the position axis; leading dims are treated as channels."
+          },
+          "channelIndex": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Which channel of a multi-channel output to plot. Defaults to 0."
+          },
+          "transform": {
+            "enum": [
+              "identity",
+              "abs",
+              "relu"
+            ],
+            "description": "Applied per output value before binning. Defaults to identity."
+          },
+          "groupId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable collection id for output visibility controls."
+          },
+          "groupLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable output collection label."
+          },
+          "plotGroupId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Fallback multi-series plot id when no pack-level plotGroups entry matches."
+          },
+          "plotGroupLabel": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable fallback multi-series plot label."
+          },
+          "lineStyle": {
+            "enum": [
+              "solid",
+              "dashed"
+            ],
+            "description": "Optional per-series curve style. Pack-level dashed group declarations take precedence."
+          },
+          "defaultVisible": {
+            "type": "boolean",
+            "description": "Whether this output is shown when the model is first added. Defaults to true."
+          },
+          "role": {
+            "enum": [
+              "prediction",
+              "activation",
+              "effect",
+              "contribution"
+            ],
+            "description": "Scientific role displayed in the track label."
+          },
+          "scaleMode": {
+            "enum": [
+              "positive",
+              "signed"
+            ],
+            "description": "Positive signals use a bottom baseline; signed signals use a centered zero baseline."
+          },
+          "defaultSignalDisplay": {
+            "enum": [
+              "signal",
+              "sequence"
+            ],
+            "description": "Initial signal visualization. Sequence mode uses true one-value-per-base samples as signed A/C/G/T heights and falls back to a signal when zoomed out."
+          },
+          "stableMarginBp": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Minimum computed-output margin retained around the visible range when feasible, for outputs whose edge values depend on inference context."
+          },
+          "fixedScale": {
+            "type": "object",
+            "description": "Pin this output's y-axis to a known range (e.g. a probability is [0,1]). Omit for outputs whose scale is data-dependent; a signed contribution must omit it or its negative half is clipped.",
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          "renderStyle": {
+            "type": "string",
+            "enum": [
+              "bars",
+              "line"
+            ],
+            "description": "'bars' draws one mark per base, for outputs that are one value per base; 'line' (default) joins values for continuous signal."
+          },
+          "scaleShapes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "complement-log"
+              ]
+            },
+            "uniqueItems": true,
+            "description": "Y-axis shapes this output enables beyond the linear, power and log every signal offers. 'complement-log' draws -log10(1 - p), giving each nine (0.9, 0.99, 0.999...) the same height; it needs a probability, so the output must declare a fixedScale inside [0, 1]."
+          },
+          "mutagenesis": {
+            "type": "object",
+            "description": "Derive this row by exact in silico saturation mutagenesis of outputName/channelIndex instead of reading it. For each base on screen the browser re-scores the window with that base substituted, three times; the value is the summed absolute change in probability within contextBp of the base, averaged over the three substitutions. Unsigned: a base the calls depend on and a base whose mutation would create a call both read high. Computed only while the view is at most maxSpanBp wide.",
+            "properties": {
+              "contextBp": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Absolute changes within this many bases of the mutated base are summed. Defaults to 500."
+              },
+              "maxSpanBp": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Computed only while the view is at most this wide; the row says so when it is wider. Defaults to 400."
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    }
+  }
+}

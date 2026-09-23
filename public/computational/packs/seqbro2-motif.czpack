@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "seqbro2-motif",
+  "name": "Seqbro2 Motif",
+  "description": "Seqbro2 motif activation model exported to ONNX.",
+  "assemblyId": "hg38",
+  "sequenceProvider": {
+    "type": "ucsc",
+    "genome": "hg38"
+  },
+  "model": {
+    "format": "onnx",
+    "url": "/computational/models/seqbro2-motif.onnx",
+    "inputName": "encoded_seq",
+    "fixedInputs": {
+      "threshold": 8
+    }
+  },
+  "inference": {
+    "flankBp": 14,
+    "maxWindowBp": 300000,
+    "maxResolutionBp": 24
+  },
+  "subtracks": [
+    {
+      "id": "motif-density",
+      "name": "Motif density (scaled)",
+      "kind": "signal",
+      "color": "#f492c4",
+      "height": 76,
+      "outputName": "scaled_one_row",
+      "channelIndex": 0,
+      "transform": "relu"
+    },
+    {
+      "id": "motif1-score",
+      "name": "Motif 1 score",
+      "kind": "signal",
+      "color": "#68cbe2",
+      "height": 76,
+      "outputName": "motif1sc",
+      "channelIndex": 0,
+      "transform": "relu"
+    },
+    {
+      "id": "motif2-score",
+      "name": "Motif 2 score",
+      "kind": "signal",
+      "color": "#6ecf83",
+      "height": 76,
+      "outputName": "motif2sc",
+      "channelIndex": 0,
+      "transform": "relu"
+    }
+  ]
+}

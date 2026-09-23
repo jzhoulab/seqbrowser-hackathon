@@ -1,0 +1,23 @@
+# Cloudflare Pages header rules.
+#
+# Cross-origin isolation is what makes SharedArrayBuffer available, which is what
+# lets onnxruntime-web run multi-threaded WASM. Without these two headers the
+# inference worker silently falls back to a single core and the latency budget
+# work is wasted. This mirrors `crossOriginIsolationHeaders` in vite.config.ts,
+# which covers dev and preview but not a deployed build.
+#
+# Cross-origin data (UCSC bigWig range reads, the UCSC sequence API) is fetched
+# in CORS mode and UCSC sends `Access-Control-Allow-Origin: *`, so require-corp
+# does not block it.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
+# Content-hashed by the bundler, so it can never go stale.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The ORT WASM binary is 11.7 MB and versioned with the dependency, not the URL,
+# so cache it hard but revalidate on deploy.
+/ort/*
+  Cache-Control: public, max-age=86400
